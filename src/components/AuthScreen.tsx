@@ -1,9 +1,7 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import {
   AlertCircle,
   ArrowRight,
-  Check,
-  Copy,
   Eye,
   EyeOff,
   Globe,
@@ -20,11 +18,6 @@ import {
   mapCustomAuthError,
   registerWithCustomAuth,
 } from '../services/customAuth'
-import {
-  firebaseAuthorizedDomainsConsoleUrl,
-  mapAuthError,
-  signInWithGooglePopup,
-} from '../services/firebase'
 import type { AuthenticatedSession, Language, ThemeMode } from '../types'
 
 export interface RegistrationProfileMeta {
@@ -36,8 +29,6 @@ export interface RegistrationProfileMeta {
 interface AuthScreenProps {
   language: Language
   theme: ThemeMode
-  initialError?: unknown
-  onClearInitialError?: () => void
   onToggleLanguage: () => void
   onToggleTheme: () => void
   onAuthSuccess: (session: AuthenticatedSession, meta?: RegistrationProfileMeta) => void
@@ -48,8 +39,6 @@ type AuthMode = 'login' | 'register'
 export function AuthScreen({
   language,
   theme,
-  initialError,
-  onClearInitialError,
   onToggleLanguage,
   onToggleTheme,
   onAuthSuccess,
@@ -67,70 +56,18 @@ export function AuthScreen({
   const [showForgotHelp, setShowForgotHelp] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [needsAuthorizedDomainHelp, setNeedsAuthorizedDomainHelp] = useState(false)
-  const [copiedDomain, setCopiedDomain] = useState(false)
-
-  const currentHostname = typeof window !== 'undefined' ? window.location.hostname : ''
-
-  useEffect(() => {
-    if (!initialError) return
-    const mapped = mapAuthError(initialError, isHi)
-    setErrorMsg(mapped.message)
-    setNeedsAuthorizedDomainHelp(Boolean(mapped.needsAuthorizedDomainHelp))
-  }, [initialError, isHi])
 
   const switchMode = (nextMode: AuthMode) => {
     setMode(nextMode)
     setErrorMsg(null)
     setShowForgotHelp(false)
-    setNeedsAuthorizedDomainHelp(false)
-    onClearInitialError?.()
-  }
-
-  const handleCopyHostname = async () => {
-    if (!currentHostname || typeof navigator === 'undefined' || !navigator.clipboard) return
-    try {
-      await navigator.clipboard.writeText(currentHostname)
-      setCopiedDomain(true)
-      window.setTimeout(() => setCopiedDomain(false), 2000)
-    } catch {
-      // Ignore clipboard permission errors
-    }
-  }
-
-  const handleGoogleSignIn = async () => {
-    setErrorMsg(null)
-    setShowForgotHelp(false)
-    setNeedsAuthorizedDomainHelp(false)
-    onClearInitialError?.()
-    setGoogleLoading(true)
-    try {
-      const user = await signInWithGooglePopup()
-      if (user) {
-        onAuthSuccess({
-          uid: user.uid,
-          email: user.email || '',
-          displayName: user.displayName || user.email?.split('@')[0] || 'Google User',
-          emailVerified: user.emailVerified,
-          providerId: 'google.com',
-        })
-      }
-    } catch (err) {
-      const mapped = mapAuthError(err, isHi)
-      setErrorMsg(mapped.message)
-      setNeedsAuthorizedDomainHelp(Boolean(mapped.needsAuthorizedDomainHelp))
-    } finally {
-      setGoogleLoading(false)
-    }
   }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setErrorMsg(null)
     setShowForgotHelp(false)
-    setNeedsAuthorizedDomainHelp(false)
 
     const trimmedEmail = email.trim()
     if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
@@ -183,7 +120,7 @@ export function AuthScreen({
     }
   }
 
-  const anyLoading = submitting || googleLoading
+  const anyLoading = submitting
 
   return (
     <div className="min-h-screen w-full sample-pastel-sky text-[#1B251A] dark:text-[#E5E8CE] transition-colors flex flex-col justify-between p-4 sm:p-6 lg:p-8">
@@ -231,58 +168,19 @@ export function AuthScreen({
           transition={{ duration: 0.24, ease: 'easeOut' }}
           className="clay-shell rounded-[34px] p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
         >
-          {/* Left Panel: Clean Halo + EMOTION AI + Google Sign-In */}
-          <section className="lg:col-span-5 sample-pastel-sky rounded-[28px] p-7 sm:p-8 flex flex-col items-center justify-between text-center gap-6 border border-white/75 dark:border-white/10">
-            <div className="pt-2">
-              <div className="w-20 h-20 mx-auto rounded-full bg-white/65 dark:bg-white/10 shadow-[0_0_40px_rgba(94,125,91,0.38)] flex items-center justify-center">
-                <BrandLogo size="lg" />
-              </div>
-              <h1 className="mt-6 font-display text-2xl sm:text-3xl font-bold leading-tight tracking-tight">
-                EMOTION AI
-              </h1>
-              <p className="mt-1.5 text-xs font-medium text-[#495847] dark:text-[#A8C6A4]">
-                {isHi
-                  ? 'व्यक्तिगत मानसिक स्वास्थ्य व समग्र देखभाल'
-                  : 'Personal Mental Wellness & Care Companion'}
-              </p>
+          {/* Left Panel: Clean Halo + EMOTION AI Branding */}
+          <section className="lg:col-span-5 sample-pastel-sky rounded-[28px] p-7 sm:p-8 flex flex-col items-center justify-center text-center gap-4 border border-white/75 dark:border-white/10">
+            <div className="w-20 h-20 mx-auto rounded-full bg-white/65 dark:bg-white/10 shadow-[0_0_40px_rgba(94,125,91,0.38)] flex items-center justify-center">
+              <BrandLogo size="lg" />
             </div>
-
-            <div className="w-full space-y-3">
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={anyLoading}
-                className="w-full h-11 px-4 rounded-full bg-white dark:bg-[#192819] text-[#1B251A] dark:text-[#E5E8CE] shadow-md flex items-center justify-center gap-2.5 text-xs font-semibold cursor-pointer disabled:opacity-60 hover:opacity-95 transition-opacity"
-              >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="#4285F4"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"
-                  />
-                </svg>
-                <span>
-                  {googleLoading
-                    ? isHi
-                      ? 'Google से जुड़ रहा है...'
-                      : 'Connecting Google...'
-                    : isHi
-                      ? 'Google से लॉग इन करें'
-                      : 'Continue with Google'}
-                </span>
-              </button>
-            </div>
+            <h1 className="mt-2 font-display text-2xl sm:text-3xl font-bold leading-tight tracking-tight">
+              EMOTION AI
+            </h1>
+            <p className="text-xs font-medium text-[#495847] dark:text-[#A8C6A4]">
+              {isHi
+                ? 'व्यक्तिगत मानसिक स्वास्थ्य व समग्र देखभाल'
+                : 'Personal Mental Wellness & Care Companion'}
+            </p>
           </section>
 
           {/* Right Panel: Custom Sign In / Create Account */}
@@ -302,7 +200,7 @@ export function AuthScreen({
                   {mode === 'login'
                     ? isHi
                       ? 'आगे बढ़ने के लिए अपना ईमेल और पासवर्ड दर्ज करें।'
-                      : 'Enter your EMOTION AI credentials, or continue with Google.'
+                      : 'Enter your EMOTION AI email and password to continue.'
                     : isHi
                       ? 'कुछ ही सेकंड में अपनी व्यक्तिगत प्रोफ़ाइल शुरू करें।'
                       : 'Set up your personal wellness profile in seconds.'}
@@ -333,51 +231,10 @@ export function AuthScreen({
               {errorMsg && (
                 <div
                   role="alert"
-                  className="clay-tile rounded-[16px] p-3.5 text-xs text-[#BF2B24] dark:text-[#FF8E88] space-y-2"
+                  className="clay-tile rounded-[16px] p-3.5 text-xs text-[#BF2B24] dark:text-[#FF8E88] flex items-start gap-2"
                 >
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{errorMsg}</span>
-                  </div>
-
-                  {needsAuthorizedDomainHelp && (
-                    <div className="pl-6 space-y-2">
-                      {currentHostname && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <code className="px-2 py-1 rounded-[8px] bg-black/5 dark:bg-white/10 text-[11px] font-mono text-[#1B251A] dark:text-[#E5E8CE] break-all">
-                            {currentHostname}
-                          </code>
-                          <button
-                            type="button"
-                            onClick={handleCopyHostname}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] bg-white/80 dark:bg-white/10 text-[11px] font-semibold text-[#1B251A] dark:text-[#E5E8CE] cursor-pointer hover:opacity-90"
-                          >
-                            {copiedDomain ? (
-                              <>
-                                <Check className="w-3 h-3 text-[#246A49] dark:text-[#8EE0B6]" />
-                                <span>{isHi ? 'कॉपी हुआ' : 'Copied'}</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                <span>{isHi ? 'डोमेन कॉपी करें' : 'Copy domain'}</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      )}
-                      <a
-                        href={firebaseAuthorizedDomainsConsoleUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block font-semibold underline"
-                      >
-                        {isHi
-                          ? 'Authorized Domains सेटिंग खोलें'
-                          : 'Open Authorized Domains Settings'}
-                      </a>
-                    </div>
-                  )}
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{errorMsg}</span>
                 </div>
               )}
 
@@ -391,8 +248,8 @@ export function AuthScreen({
                   </div>
                   <p className="opacity-85 leading-relaxed">
                     {isHi
-                      ? 'यदि आप पासवर्ड भूल गए हैं, तो आप Google से लॉग इन कर सकते हैं या "नया खाता" टैब से नया खाता बना सकते हैं।'
-                      : 'If you forgot your password, you can sign in with Google or create a new profile under Create Account.'}
+                      ? 'यदि आप पासवर्ड भूल गए हैं, तो आप "नया खाता" टैब से नया खाता बना सकते हैं या अपने क्लिनिक एडमिन से संपर्क करें।'
+                      : 'If you forgot your password, you can create a new profile under Create Account or contact your clinic administrator.'}
                   </p>
                 </div>
               )}

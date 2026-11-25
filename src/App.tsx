@@ -38,7 +38,6 @@ import { SafetyGuardianModal } from './components/SafetyGuardianModal'
 import { ProfileModal } from './components/ProfileModal'
 import { AccountSwitcherModal } from './components/AccountSwitcherModal'
 import { logoutCustomAuth, setCustomAuthSession } from './services/customAuth'
-import { completeGoogleRedirectSignIn, signOutUser } from './services/firebase'
 import {
   addCounsellingBooking,
   addDoctorQuestion,
@@ -106,7 +105,6 @@ export default function App() {
   const [checkInitialStep, setCheckInitialStep] = useState<CheckModalStartStep | undefined>(undefined)
   const [guidedTherapyMode, setGuidedTherapyMode] = useState<GuidedTherapyMode | null>(null)
   const [authSession, setAuthSession] = useState<AuthenticatedSession | null>(null)
-  const [authRedirectError, setAuthRedirectError] = useState<unknown | null>(null)
   const [doctorAuthorized, setDoctorAuthorized] = useState(false)
   const [activeSyrupAlarm, setActiveSyrupAlarm] = useState<{
     slot: ScheduledDoseSlot
@@ -128,32 +126,6 @@ export default function App() {
     }
     saveAppState(appState)
   }, [appState])
-
-  useEffect(() => {
-    void completeGoogleRedirectSignIn()
-      .then((user) => {
-        if (!user) return
-        const session: AuthenticatedSession = {
-          uid: user.uid,
-          email: user.email || '',
-          displayName: user.displayName || user.email?.split('@')[0] || 'Google User',
-          emailVerified: user.emailVerified,
-          providerId: 'google.com',
-        }
-        setAppState((prev) =>
-          ensureAuthenticatedAccount(prev, {
-            uid: session.uid,
-            name: session.displayName,
-            email: session.email,
-          })
-        )
-        setCustomAuthSession(session)
-        setAuthSession(session)
-      })
-      .catch((err) => {
-        setAuthRedirectError(err)
-      })
-  }, [])
 
   useEffect(() => {
     if (!activeModal) return
@@ -279,14 +251,10 @@ export default function App() {
   }
 
   const handleSignOut = async () => {
-    const prevProvider = authSession?.providerId
     setActiveModal(null)
     setDoctorAuthorized(false)
     setAuthSession(null)
     await logoutCustomAuth()
-    if (prevProvider === 'google.com') {
-      await signOutUser().catch(() => {})
-    }
   }
 
   const handleAuthSuccess = (session: AuthenticatedSession, meta?: RegistrationProfileMeta) => {
@@ -353,8 +321,6 @@ export default function App() {
       <AuthScreen
         language={appState.language}
         theme={appState.theme}
-        initialError={authRedirectError}
-        onClearInitialError={() => setAuthRedirectError(null)}
         onToggleLanguage={handleToggleLanguage}
         onToggleTheme={handleToggleTheme}
         onAuthSuccess={handleAuthSuccess}
