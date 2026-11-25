@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="4" y1="3" x2="40" y2="41" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7C9E78" />
+      <stop offset="52%" stop-color="#4F704C" />
+      <stop offset="100%" stop-color="#26402B" />
+    </linearGradient>
+    <linearGradient id="petal" x1="22" y1="9" x2="22" y2="27" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FAFDF2" />
+      <stop offset="100%" stop-color="#CBE1C4" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="40" height="40" rx="13" fill="url(#bg)" />
+  <rect x="2.75" y="2.75" width="38.5" height="38.5" rx="12.25" stroke="#FFFFFF" stroke-opacity="0.34" stroke-width="1.5" />
+  <path d="M21.5 25.5C16.2 25.2 12.1 21.8 11.4 16.4C16 16.7 19.6 19.4 21.5 25.5Z" fill="#DCEBD6" fill-opacity="0.58" />
+  <path d="M22.5 25.5C27.8 25.2 31.9 21.8 32.6 16.4C28 16.7 24.4 19.4 22.5 25.5Z" fill="#DCEBD6" fill-opacity="0.58" />
+  <path d="M22 9.5C25.3 13.7 26.1 19.8 22 25.8C17.9 19.8 18.7 13.7 22 9.5Z" fill="url(#petal)" />
+  <path d="M8.5 29.8H13.2C14.3 29.8 15 26.2 16.2 26.2C17.5 26.2 18.3 33.4 19.7 33.4C21.2 33.4 22.1 24.2 23.6 24.2C25 24.2 25.9 31.5 27.3 31.5C28.4 31.5 29.1 28.4 30.2 28.4C31.1 28.4 31.7 29.8 32.6 29.8H35.5" stroke="#FAFDF2" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

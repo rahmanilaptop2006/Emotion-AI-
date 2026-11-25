@@ -1,0 +1,11 @@
+{
+  "name": "Remix Remix Remix Remix OmniTask",
+  "description": "An all-in-one productivity app designed to streamline your daily workflow and manage all tasks in one place.",
+  "requestFramePermissions": [
+    "microphone",
+    "bluetooth"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

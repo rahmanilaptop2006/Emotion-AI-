@@ -1,0 +1,309 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Owner-scoped clinical wellness profile, sensor preferences, and patch configuration.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "institution": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "avatarInitials": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4
+        },
+        "wellnessScore": {
+          "type": "number"
+        },
+        "baselineScore": {
+          "type": "number"
+        },
+        "streakDays": {
+          "type": "number"
+        },
+        "language": {
+          "type": "string",
+          "enum": ["en", "hi"]
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["light", "dark"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "name",
+        "role",
+        "avatarInitials",
+        "wellnessScore",
+        "baselineScore",
+        "streakDays",
+        "language",
+        "theme",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserPrivatePii": {
+      "title": "UserPrivatePii",
+      "description": "Strictly isolated PII document storing the user's verified email.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "updatedAt"]
+    },
+    "CheckInRecord": {
+      "title": "CheckInRecord",
+      "description": "Daily mental wellness check-in entry.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "wellnessScore": {
+          "type": "number"
+        },
+        "moodLabel": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "stressLevel": {
+          "type": "string",
+          "enum": ["Low", "Medium", "High"]
+        },
+        "sleepHours": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "date",
+        "wellnessScore",
+        "moodLabel",
+        "stressLevel",
+        "sleepHours",
+        "createdAt"
+      ]
+    },
+    "JournalRecord": {
+      "title": "JournalRecord",
+      "description": "Encrypted-session personal CBT/mindfulness journal entry.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "mood": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "moodScore": {
+          "type": "number"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "date", "mood", "moodScore", "text", "createdAt"]
+    },
+    "HabitRecord": {
+      "title": "HabitRecord",
+      "description": "Daily herbal tonic or mindfulness habit completion record.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "habitId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "minutesLogged": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "habitId", "date", "completed", "minutesLogged", "updatedAt"]
+    },
+    "WearableDeviceRecord": {
+      "title": "WearableDeviceRecord",
+      "description": "Connected wearable device configuration and latest health telemetry for regular tracking.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "deviceId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "bluetooth_ble",
+            "apple_watch",
+            "fitbit",
+            "garmin",
+            "samsung_watch",
+            "oura_ring",
+            "google_health_connect"
+          ]
+        },
+        "deviceName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "connected": {
+          "type": "boolean"
+        },
+        "regularTrackingEnabled": {
+          "type": "boolean"
+        },
+        "syncCadence": {
+          "type": "string",
+          "enum": ["realtime_ble", "hourly", "every_6h", "daily_checkin"]
+        },
+        "trackedMetrics": {
+          "type": "array"
+        },
+        "restingHrBpm": {
+          "type": "number"
+        },
+        "hrvMs": {
+          "type": "number"
+        },
+        "spo2Percent": {
+          "type": "number"
+        },
+        "sleepHours": {
+          "type": "number"
+        },
+        "steps": {
+          "type": "number"
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": ["ble_live", "file_import", "manual_log"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "deviceId",
+        "provider",
+        "deviceName",
+        "connected",
+        "regularTrackingEnabled",
+        "syncCadence",
+        "trackedMetrics",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Owner-only wellness profile document."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivatePii" },
+      "description": "Isolated PII subcollection storing verified user email."
+    },
+    "/users/{userId}/checkIns/{checkInId}": {
+      "schema": { "$ref": "#/entities/CheckInRecord" },
+      "description": "Owner-only check-in history subcollection."
+    },
+    "/users/{userId}/journalEntries/{entryId}": {
+      "schema": { "$ref": "#/entities/JournalRecord" },
+      "description": "Owner-only journal reflection subcollection."
+    },
+    "/users/{userId}/habitLogs/{logId}": {
+      "schema": { "$ref": "#/entities/HabitRecord" },
+      "description": "Owner-only daily habit completion logs."
+    },
+    "/users/{userId}/wearables/{deviceId}": {
+      "schema": { "$ref": "#/entities/WearableDeviceRecord" },
+      "description": "Owner-only connected wearable devices and synced regular health vitals."
+    }
+  }
+}

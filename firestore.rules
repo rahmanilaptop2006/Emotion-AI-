@@ -1,0 +1,343 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function parentUserExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'name',
+          'role',
+          'avatarInitials',
+          'wellnessScore',
+          'baselineScore',
+          'streakDays',
+          'language',
+          'theme',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'name',
+          'role',
+          'institution',
+          'avatarInitials',
+          'wellnessScore',
+          'baselineScore',
+          'streakDays',
+          'language',
+          'theme',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.uid == request.auth.uid &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.role is string && data.role.size() >= 1 && data.role.size() <= 120 &&
+        (!('institution' in data) || (data.institution is string && data.institution.size() <= 160)) &&
+        data.avatarInitials is string && data.avatarInitials.size() >= 1 && data.avatarInitials.size() <= 4 &&
+        data.wellnessScore is number && data.wellnessScore >= 0 && data.wellnessScore <= 100 &&
+        data.baselineScore is number && data.baselineScore >= 0 && data.baselineScore <= 100 &&
+        data.streakDays is number && data.streakDays >= 0 && data.streakDays <= 3650 &&
+        data.language in ['en', 'hi'] &&
+        data.theme in ['light', 'dark'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivatePii(data) {
+      return data.keys().hasAll(['uid', 'email', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.uid == request.auth.uid &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 254 &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCheckInRecord(data) {
+      return data.keys().hasAll([
+          'uid',
+          'date',
+          'wellnessScore',
+          'moodLabel',
+          'stressLevel',
+          'sleepHours',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'date',
+          'wellnessScore',
+          'moodLabel',
+          'stressLevel',
+          'sleepHours',
+          'createdAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.uid == request.auth.uid &&
+        data.date is string && data.date.size() >= 1 && data.date.size() <= 40 &&
+        data.wellnessScore is number && data.wellnessScore >= 0 && data.wellnessScore <= 100 &&
+        data.moodLabel is string && data.moodLabel.size() >= 1 && data.moodLabel.size() <= 80 &&
+        data.stressLevel in ['Low', 'Medium', 'High'] &&
+        data.sleepHours is number && data.sleepHours >= 0 && data.sleepHours <= 24 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidJournalRecord(data) {
+      return data.keys().hasAll(['uid', 'date', 'mood', 'moodScore', 'text', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'date', 'mood', 'moodScore', 'text', 'createdAt']) &&
+        isValidId(data.uid) &&
+        data.uid == request.auth.uid &&
+        data.date is string && data.date.size() >= 1 && data.date.size() <= 60 &&
+        data.mood is string && data.mood.size() >= 1 && data.mood.size() <= 60 &&
+        data.moodScore is number && data.moodScore >= 0 && data.moodScore <= 100 &&
+        data.text is string && data.text.size() >= 1 && data.text.size() <= 4000 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidHabitRecord(data) {
+      return data.keys().hasAll(['uid', 'habitId', 'date', 'completed', 'minutesLogged', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'habitId', 'date', 'completed', 'minutesLogged', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.uid == request.auth.uid &&
+        data.habitId is string && data.habitId.size() >= 1 && data.habitId.size() <= 128 &&
+        data.date is string && data.date.size() >= 1 && data.date.size() <= 20 &&
+        data.completed is bool &&
+        data.minutesLogged is number && data.minutesLogged >= 0 && data.minutesLogged <= 600 &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidWearableRecord(data) {
+      return data.keys().hasAll([
+          'uid',
+          'deviceId',
+          'provider',
+          'deviceName',
+          'connected',
+          'regularTrackingEnabled',
+          'syncCadence',
+          'trackedMetrics',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'deviceId',
+          'provider',
+          'deviceName',
+          'connected',
+          'regularTrackingEnabled',
+          'syncCadence',
+          'trackedMetrics',
+          'restingHrBpm',
+          'hrvMs',
+          'spo2Percent',
+          'sleepHours',
+          'steps',
+          'sourceType',
+          'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.uid == request.auth.uid &&
+        isValidId(data.deviceId) &&
+        data.provider in [
+          'bluetooth_ble',
+          'apple_watch',
+          'fitbit',
+          'garmin',
+          'samsung_watch',
+          'oura_ring',
+          'google_health_connect'
+        ] &&
+        data.deviceName is string && data.deviceName.size() >= 1 && data.deviceName.size() <= 80 &&
+        data.connected is bool &&
+        data.regularTrackingEnabled is bool &&
+        data.syncCadence in ['realtime_ble', 'hourly', 'every_6h', 'daily_checkin'] &&
+        data.trackedMetrics is list &&
+        data.trackedMetrics.size() >= 1 &&
+        data.trackedMetrics.size() <= 5 &&
+        data.trackedMetrics[0] is string &&
+        data.trackedMetrics.hasOnly(['hr', 'hrv', 'sleep', 'steps', 'spo2']) &&
+        (!('restingHrBpm' in data) || (data.restingHrBpm is number && data.restingHrBpm >= 25 && data.restingHrBpm <= 240)) &&
+        (!('hrvMs' in data) || (data.hrvMs is number && data.hrvMs >= 1 && data.hrvMs <= 300)) &&
+        (!('spo2Percent' in data) || (data.spo2Percent is number && data.spo2Percent >= 60 && data.spo2Percent <= 100)) &&
+        (!('sleepHours' in data) || (data.sleepHours is number && data.sleepHours >= 0 && data.sleepHours <= 24)) &&
+        (!('steps' in data) || (data.steps is number && data.steps >= 0 && data.steps <= 200000)) &&
+        (!('sourceType' in data) || data.sourceType in ['ble_live', 'file_import', 'manual_log']) &&
+        data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow create: if isValidId(userId) &&
+        isOwner(userId) &&
+        isVerifiedUser() &&
+        isValidUserProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) &&
+        isOwner(userId) &&
+        isVerifiedUser() &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name',
+          'role',
+          'institution',
+          'avatarInitials',
+          'wellnessScore',
+          'baselineScore',
+          'streakDays',
+          'language',
+          'theme',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(userId) && isOwner(userId) && isVerifiedUser();
+
+      match /private/{docId} {
+        allow get: if isValidId(userId) && isValidId(docId) && docId == 'pii' && isOwner(userId);
+        allow create: if isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'pii' &&
+          isOwner(userId) &&
+          isVerifiedUser() &&
+          isValidUserPrivatePii(incoming()) &&
+          incoming().updatedAt == request.time &&
+          parentUserExists(userId);
+        allow update: if isValidId(userId) &&
+          isValidId(docId) &&
+          docId == 'pii' &&
+          isOwner(userId) &&
+          isVerifiedUser() &&
+          isValidUserPrivatePii(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt']) &&
+          parentUserExists(userId);
+        allow delete: if isValidId(userId) && isValidId(docId) && docId == 'pii' && isOwner(userId) && isVerifiedUser();
+      }
+
+      match /checkIns/{checkInId} {
+        allow get: if isValidId(userId) && isValidId(checkInId) && isOwner(userId);
+        allow list: if isOwner(userId) && isVerifiedUser() && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) &&
+          isValidId(checkInId) &&
+          isOwner(userId) &&
+          isVerifiedUser() &&
+          isValidCheckInRecord(incoming()) &&
+          incoming().createdAt == request.time &&
+          parentUserExists(userId);
+        allow delete: if isValidId(userId) && isValidId(checkInId) && isOwner(userId) && isVerifiedUser() && parentUserExists(userId);
+      }
+
+      match /journalEntries/{entryId} {
+        allow get: if isValidId(userId) && isValidId(entryId) && isOwner(userId);
+        allow list: if isOwner(userId) && isVerifiedUser() && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) &&
+          isValidId(entryId) &&
+          isOwner(userId) &&
+          isVerifiedUser() &&
+          isValidJournalRecord(incoming()) &&
+          incoming().createdAt == request.time &&
+          parentUserExists(userId);
+        allow delete: if isValidId(userId) && isValidId(entryId) && isOwner(userId) && isVerifiedUser() && parentUserExists(userId);
+      }
+
+      match /habitLogs/{logId} {
+        allow get: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+        allow list: if isOwner(userId) && isVerifiedUser() && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) &&
+          isValidId(logId) &&
+          isOwner(userId) &&
+          isVerifiedUser() &&
+          isValidHabitRecord(incoming()) &&
+          incoming().updatedAt == request.time &&
+          parentUserExists(userId);
+        allow update: if isValidId(userId) &&
+          isValidId(logId) &&
+          isOwner(userId) &&
+          isVerifiedUser() &&
+          isValidHabitRecord(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().habitId == existing().habitId &&
+          incoming().date == existing().date &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'minutesLogged', 'updatedAt']) &&
+          parentUserExists(userId);
+        allow delete: if isValidId(userId) && isValidId(logId) && isOwner(userId) && isVerifiedUser() && parentUserExists(userId);
+      }
+
+      match /wearables/{deviceId} {
+        allow get: if isValidId(userId) && isValidId(deviceId) && isOwner(userId);
+        allow list: if isOwner(userId) && isVerifiedUser() && resource.data.uid == request.auth.uid;
+        allow create: if isValidId(userId) &&
+          isValidId(deviceId) &&
+          isOwner(userId) &&
+          isVerifiedUser() &&
+          isValidWearableRecord(incoming()) &&
+          incoming().deviceId == deviceId &&
+          incoming().updatedAt == request.time &&
+          parentUserExists(userId);
+        allow update: if isValidId(userId) &&
+          isValidId(deviceId) &&
+          isOwner(userId) &&
+          isVerifiedUser() &&
+          isValidWearableRecord(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().deviceId == existing().deviceId &&
+          incoming().provider == existing().provider &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'deviceName',
+            'connected',
+            'regularTrackingEnabled',
+            'syncCadence',
+            'trackedMetrics',
+            'restingHrBpm',
+            'hrvMs',
+            'spo2Percent',
+            'sleepHours',
+            'steps',
+            'sourceType',
+            'updatedAt'
+          ]) &&
+          parentUserExists(userId);
+        allow delete: if isValidId(userId) && isValidId(deviceId) && isOwner(userId) && isVerifiedUser() && parentUserExists(userId);
+      }
+    }
+  }
+}
